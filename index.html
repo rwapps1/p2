@@ -878,6 +878,25 @@
     conjugateStreak50:   { name: 'Grammar Legend',  desc: 'Reach a 50-answer Conjugate streak',    icon: '🏛️' },
   };
 
+  // Groups the flat ACHIEVEMENTS registry by which game each badge belongs to,
+  // using the id prefix convention already in place (timeAttack*, memory*, conjugate*).
+  // Anything with no game-specific prefix belongs to Quiz (which Categories shares).
+  const ACHIEVEMENT_GROUPS = [
+    { id: 'quiz', name: 'Quiz', icon: '🔤', color: 'rgba(255,107,74,0.18)', prefix: null },
+    { id: 'timeattack', name: 'Time Attack', icon: '⏱', color: 'rgba(45,212,191,0.18)', prefix: 'timeAttack' },
+    { id: 'memory', name: 'Memory Match', icon: '🧩', color: 'rgba(217,70,239,0.18)', prefix: 'memory' },
+    { id: 'conjugate', name: 'Conjugate', icon: '📖', color: 'rgba(52,211,153,0.18)', prefix: 'conjugate' },
+  ];
+
+  function achievementIdsForGroup(group) {
+    const allIds = Object.keys(ACHIEVEMENTS);
+    if (group.prefix === null) {
+      const otherPrefixes = ACHIEVEMENT_GROUPS.filter(g => g.prefix).map(g => g.prefix);
+      return allIds.filter(id => !otherPrefixes.some(p => id.startsWith(p)));
+    }
+    return allIds.filter(id => id.startsWith(group.prefix));
+  }
+
   // file id (matches "categories-{id}.xlsx" in the repo) -> display name + icon
   // kept in alphabetical order by name, which is also the order the tiles render in
   const CATEGORIES = [
@@ -1048,6 +1067,7 @@
     conjugateSelectedOption: null,
     conjugateNewBestStreak: false,
     conjugateLastWasTypo: false,
+    achievementGroup: null,
   };
 
   function normalize(str) {
@@ -2972,7 +2992,7 @@
             <button id="back-btn" class="back-btn">←</button>
           </div>
           <div class="screen-body">
-            <div class="eyebrow" style="margin-bottom:4px;">Board cleared</div>
+            <div class="eyebrow" style="margin-bottom:4px;">Completado</div>
             <div class="score-big" style="margin-bottom:8px;">${state.memoryMoves}</div>
             <div class="streak-line">moves · ${formatMemoryTime(state.memorySeconds)}</div>
             ${state.memoryIsNewBest ? `<div class="new-best">🏆 New best!</div>` : (best ? `<div class="streak-line">Best: ${best} moves</div>` : '')}
@@ -3172,7 +3192,46 @@
 
   function renderAchievements() {
     const app = document.getElementById('app');
-    const ids = Object.keys(ACHIEVEMENTS);
+
+    const tilesHtml = ACHIEVEMENT_GROUPS.map(group => {
+      const ids = achievementIdsForGroup(group);
+      const unlockedCount = ids.filter(id => state.progress.achievements[id] && state.progress.achievements[id].unlocked).length;
+      return `
+        <button class="game-tile" data-group="${group.id}">
+          <div class="tile-icon-wrap" style="background:${group.color};">${group.icon}</div>
+          <div class="tile-name">${esc(group.name)}</div>
+          <div class="tile-meta">${unlockedCount}/${ids.length} unlocked</div>
+        </button>
+      `;
+    }).join('');
+
+    app.innerHTML = `
+      <div class="screen bg-achievements">
+        <div class="wrap">
+          <div class="screen-header">
+            <button id="back-btn" class="back-btn">←</button>
+            <div class="screen-title">🏆 Achievements</div>
+          </div>
+          <div class="game-grid">${tilesHtml}</div>
+        </div>
+      </div>
+    `;
+
+    document.getElementById('back-btn').addEventListener('click', goHome);
+    document.querySelectorAll('.game-tile').forEach(tile => {
+      tile.addEventListener('click', () => {
+        state.achievementGroup = tile.dataset.group;
+        state.screen = 'achievements-detail';
+        render();
+      });
+    });
+  }
+
+  function renderAchievementGroup() {
+    const app = document.getElementById('app');
+    const group = ACHIEVEMENT_GROUPS.find(g => g.id === state.achievementGroup) || ACHIEVEMENT_GROUPS[0];
+    const ids = achievementIdsForGroup(group);
+
     const itemsHtml = ids.map(id => {
       const def = ACHIEVEMENTS[id];
       const rec = state.progress.achievements[id];
@@ -3193,7 +3252,7 @@
         <div class="wrap">
           <div class="screen-header">
             <button id="back-btn" class="back-btn">←</button>
-            <div class="screen-title">🏆 Achievements</div>
+            <div class="screen-title">${group.icon} ${esc(group.name)}</div>
           </div>
           <div class="card">
             ${itemsHtml}
@@ -3201,7 +3260,7 @@
         </div>
       </div>
     `;
-    document.getElementById('back-btn').addEventListener('click', goHome);
+    document.getElementById('back-btn').addEventListener('click', () => { state.screen = 'achievements'; render(); });
   }
 
   function renderTimeAttack() {
@@ -3244,7 +3303,7 @@
             </div>
           </div>
           ${bottomHtml}
-          <button id="ta-quit-btn" class="link-btn" style="display:block; text-align:center; width:100%; margin-top:14px;">End early</button>
+          <button id="ta-quit-btn" class="quit-link" style="display:block; text-align:center; width:100%; margin-top:14px;">Quit</button>
         </div>
       </div>
     `;
@@ -3271,7 +3330,7 @@
     }
 
     document.getElementById('ta-quit-btn').addEventListener('click', () => {
-      if (confirm('End this Time Attack round early?')) endTimeAttack();
+      if (confirm('Quit this round? Your progress on it will be scored as-is.')) endTimeAttack();
     });
   }
 
@@ -3311,7 +3370,7 @@
             <div class="streak-line">correct in 60 seconds</div>
             ${state.taIsNewBest ? `<div class="new-best">🏆 New best score!</div>` : `<div class="streak-line">Best: ${best}</div>`}
             ${reviewHtml}
-            <button id="ta-again-btn" class="btn-primary" style="width:100%; margin-bottom:10px;">Go again</button>
+            <button id="ta-again-btn" class="btn-primary" style="width:100%; margin-bottom:10px;">Play again</button>
             <button id="ta-settings-btn" class="btn-secondary" style="width:100%;">Change settings</button>
           </div>
         </div>
@@ -3341,6 +3400,7 @@
       else renderResult();
     }
     else if (state.screen === 'achievements') renderAchievements();
+    else if (state.screen === 'achievements-detail') renderAchievementGroup();
   }
 
   // Single, stable listener for advancing on Enter from the feedback screen.
