@@ -946,6 +946,7 @@
     position: fixed;
     inset: 0;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
     background: var(--bg);
@@ -979,29 +980,54 @@
     position: absolute;
     top: -20%;
     left: -60%;
-    width: 40%;
+    width: 45%;
     height: 140%;
-    background: linear-gradient(115deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.5) 50%, rgba(255,255,255,0) 100%);
+    background: linear-gradient(115deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.9) 50%, rgba(255,255,255,0) 100%);
     transform: rotate(8deg);
-    animation: loader-sweep 2.8s ease-in-out infinite;
+    animation: loader-sweep 1.8s ease-in-out infinite;
   }
+  #app-loading .loader-caption {
+    margin-top: 16px;
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--cream-dim);
+  }
+  #app-loading .loader-caption .dots span {
+    display: inline-block;
+    width: 3px;
+    height: 3px;
+    border-radius: 50%;
+    background: var(--cream-dim);
+    margin-left: 3px;
+    animation: loader-dotfade 1.2s ease-in-out infinite;
+  }
+  #app-loading .loader-caption .dots span:nth-child(2) { animation-delay: 0.15s; }
+  #app-loading .loader-caption .dots span:nth-child(3) { animation-delay: 0.3s; }
 
   @keyframes loader-spin {
     from { transform: rotate(0deg); }
     to { transform: rotate(360deg); }
   }
   @keyframes loader-pulse {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.06); }
+    0%, 100% { transform: scale(1); box-shadow: 0 0 28px rgba(255,196,0,0.4), 0 14px 30px -8px rgba(0,0,0,0.6); }
+    50% { transform: scale(1.12); box-shadow: 0 0 44px rgba(255,196,0,0.65), 0 14px 30px -8px rgba(0,0,0,0.6); }
   }
   @keyframes loader-sweep {
     0% { left: -60%; }
-    45%, 100% { left: 140%; }
+    55%, 100% { left: 140%; }
+  }
+  @keyframes loader-dotfade {
+    0%, 100% { opacity: 0.25; }
+    50% { opacity: 1; }
   }
   @media (prefers-reduced-motion: reduce) {
     #app-loading .loader-orb,
     #app-loading .loader-orb-inner,
-    #app-loading .loader-sweep { animation: none !important; }
+    #app-loading .loader-sweep,
+    #app-loading .loader-caption .dots span { animation: none !important; }
   }
 </style>
 </head>
@@ -1011,6 +1037,7 @@
     <div class="loader-orb-inner"></div>
     <div class="loader-sweep"></div>
   </div>
+  <div class="loader-caption">Cargando<span class="dots"><span></span><span></span><span></span></span></div>
 </div>
 <div id="app"></div>
 
@@ -1023,7 +1050,7 @@
   // The orb loader can otherwise finish faster than it's visible on a
   // quick local load — this floor guarantees at least one full
   // pulse/sweep cycle plays before it's dismissed.
-  const APP_LOADING_MIN_MS = 600;
+  const APP_LOADING_MIN_MS = 1400;
   const appLoadingShownAt = Date.now();
 
   const STORAGE_KEY = 'palabraProgress_v1';
