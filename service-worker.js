@@ -1,13 +1,36 @@
 // Edit these two filenames if yours differ from the defaults.
 const APP_HTML = './index.html';
 const WORDS_FILE = './words.xlsx';
+const VERBS_FILE = './verbs.xlsx';
 
-const CACHE_NAME = 'palabra-cache-v1';
+// The 15 category word lists (Categories game). Add/remove entries here if
+// you add or rename a categories-*.xlsx file in the repo.
+const CATEGORY_FILES = [
+  './categories-animals.xlsx',
+  './categories-bodyparts.xlsx',
+  './categories-clothing.xlsx',
+  './categories-colours.xlsx',
+  './categories-dailyverbs.xlsx',
+  './categories-daysandmonths.xlsx',
+  './categories-emotions.xlsx',
+  './categories-family.xlsx',
+  './categories-foodanddrink.xlsx',
+  './categories-greetings.xlsx',
+  './categories-house.xlsx',
+  './categories-numbers.xlsx',
+  './categories-questionwords.xlsx',
+  './categories-transport.xlsx',
+  './categories-weather.xlsx',
+];
+
+const CACHE_NAME = 'palabra-cache-v2';
 const ASSETS_TO_CACHE = [
   './',
   APP_HTML,
   './manifest.json',
   WORDS_FILE,
+  VERBS_FILE,
+  ...CATEGORY_FILES,
   './icon-192.png',
   './icon-512.png',
   './icon-512-maskable.png',
