@@ -82,6 +82,14 @@
       radial-gradient(circle at 85% 78%, rgba(217,119,6,0.26), transparent 50%),
       linear-gradient(160deg, #0E2A22 0%, #0B1F1A 60%, #0A1512 100%);
   }
+  /* My Progress is reflective, not active gameplay, so it gets a calmer
+     violet-cream glow rather than a vibrant mode color. */
+  .bg-progress {
+    background:
+      radial-gradient(circle at 20% 15%, rgba(201,168,255,0.32), transparent 45%),
+      radial-gradient(circle at 85% 75%, rgba(247,243,237,0.14), transparent 50%),
+      linear-gradient(160deg, #1A1530 0%, #140F26 60%, #100A1E 100%);
+  }
 
   .wrap { width: 100%; max-width: 420px; perspective: 700px; position: relative; }
 
@@ -314,6 +322,124 @@
   .achievements-banner .banner-name { font-weight: 700; font-size: 15px; font-family: 'Inter', sans-serif; }
   .achievements-banner .banner-meta { font-size: 12px; color: var(--cream-dim); margin-top: 2px; }
   .achievements-banner .banner-arrow { color: var(--ochre); font-size: 18px; flex-shrink: 0; }
+
+  /* My Progress sits as a second banner below Achievements — same
+     "not a game" framing. Written as its own self-contained block (not
+     extending .achievements-banner) to avoid the kind of cross-rule
+     cascade surprise documented elsewhere in this file. */
+  .progress-banner {
+    flex-direction: row;
+    align-items: center;
+    gap: 14px;
+    width: 100%;
+    margin-top: 10px;
+    padding: 12px 16px;
+    border-color: rgba(201,168,255,0.35);
+  }
+  .progress-banner .tile-icon-wrap { margin-bottom: 0; flex-shrink: 0; }
+  .progress-banner .banner-text { flex: 1; }
+  .progress-banner .banner-name { font-weight: 700; font-size: 15px; font-family: 'Inter', sans-serif; }
+  .progress-banner .banner-meta { font-size: 12px; color: var(--cream-dim); margin-top: 2px; }
+  .progress-banner .banner-arrow { color: var(--label); font-size: 18px; flex-shrink: 0; }
+
+  /* My Progress screen */
+  .progress-summary-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .card.progress-summary-card { padding: 16px 14px; }
+  .progress-summary-eyebrow {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--label);
+    margin-bottom: 10px;
+  }
+  .progress-summary-card.conjugate .progress-summary-eyebrow { color: var(--conjugate); }
+  .progress-summary-big {
+    font-family: 'Sora', sans-serif;
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 1;
+  }
+  .progress-summary-big-label {
+    font-size: 11px;
+    color: var(--cream-dim);
+    margin: 4px 0 12px;
+  }
+  .progress-summary-stat {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12.5px;
+    color: var(--cream-dim);
+    padding: 4px 0;
+    border-top: 1px solid rgba(255,255,255,0.06);
+  }
+  .progress-summary-stat span:last-child { color: var(--cream); font-weight: 600; }
+
+  .progress-section-title {
+    font-family: 'Sora', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+  .progress-section-sub {
+    font-size: 12px;
+    color: var(--cream-dim);
+    margin-bottom: 14px;
+  }
+
+  .progress-bars {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    height: 90px;
+  }
+  .progress-bar-col {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    height: 100%;
+    justify-content: flex-end;
+  }
+  .progress-bar-count { font-size: 11px; font-weight: 700; color: var(--cream-dim); }
+  .progress-bar {
+    width: 100%;
+    border-radius: 6px 6px 3px 3px;
+    background: linear-gradient(180deg, var(--label), rgba(201,168,255,0.25));
+  }
+  .progress-bar.conjugate {
+    background: linear-gradient(180deg, var(--conjugate), rgba(52,211,153,0.22));
+  }
+  .progress-bar-label { font-size: 10px; color: var(--cream-dim); }
+
+  .progress-review-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--outline);
+  }
+  .progress-review-item:last-child { border-bottom: none; }
+  .progress-review-word { font-weight: 600; font-size: 14px; }
+  .progress-review-person { color: var(--cream-dim); font-weight: 400; }
+  .progress-review-en { color: var(--cream-dim); font-size: 12.5px; margin-top: 2px; }
+  .progress-box-tag {
+    font-size: 10.5px;
+    font-weight: 700;
+    padding: 4px 9px;
+    border-radius: 999px;
+    background: rgba(255,77,109,0.16);
+    color: var(--terracotta);
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .progress-box-tag.mid { background: rgba(255,193,99,0.16); color: var(--ochre); }
+  .progress-empty { font-size: 13px; color: var(--cream-dim); padding: 4px 0; }
 
   /* Memory Match board */
   .memory-stats-row {
@@ -1575,6 +1701,8 @@
     const ws = state.progress.wordStats[key];
     const now = Date.now();
     ws.lastSeen = now;
+    ws.es = current.es;
+    ws.en = current.en;
     if (correct) {
       ws.right += 1;
       ws.box = Math.min((ws.box || 0) + 1, SRS_INTERVALS_DAYS.length - 1);
@@ -1886,6 +2014,8 @@
     const ws = state.progress.wordStats[key];
     const now = Date.now();
     ws.lastSeen = now;
+    ws.es = pair.es;
+    ws.en = pair.en;
     ws.right += 1;
     ws.box = Math.min((ws.box || 0) + 1, SRS_INTERVALS_DAYS.length - 1);
     ws.nextDue = now + SRS_INTERVALS_DAYS[ws.box] * 86400000;
@@ -2160,6 +2290,9 @@
     const vs = state.progress.verbStats[key];
     const now = Date.now();
     vs.lastSeen = now;
+    vs.es = combo.pair.es;
+    vs.en = combo.pair.en;
+    vs.person = combo.person;
     if (correct) {
       vs.right += 1;
       vs.box = Math.min((vs.box || 0) + 1, SRS_INTERVALS_DAYS.length - 1);
@@ -2257,6 +2390,40 @@
     return d.innerHTML;
   }
 
+  // ---- My Progress helpers ----
+
+  // Counts how many stats entries sit in each of the 6 SRS boxes. Works for
+  // both wordStats and verbStats (same shape). Used for the box-distribution
+  // bars on the My Progress screen.
+  function boxCounts(statsObj) {
+    const counts = [0, 0, 0, 0, 0, 0];
+    Object.keys(statsObj).forEach(key => {
+      const box = statsObj[key].box || 0;
+      if (box >= 0 && box < counts.length) counts[box] += 1;
+    });
+    return counts;
+  }
+
+  // Lowest-box entries first (what you're weakest on right now), then
+  // highest wrong-count as a tiebreaker, then least-recently-seen last.
+  // Only includes entries with stored display text - older entries (from
+  // before this field existed) pick it up automatically next time they're
+  // answered, and are simply skipped here until then (they're still fully
+  // counted in boxCounts() above).
+  function lowestBoxWords(limit) {
+    return Object.values(state.progress.wordStats)
+      .filter(ws => ws.es && ws.en)
+      .sort((a, b) => (a.box - b.box) || (b.wrong - a.wrong) || (a.lastSeen - b.lastSeen))
+      .slice(0, limit);
+  }
+
+  function lowestBoxVerbCombos(limit) {
+    return Object.values(state.progress.verbStats)
+      .filter(vs => vs.es && typeof vs.person === 'number')
+      .sort((a, b) => (a.box - b.box) || (b.wrong - a.wrong) || (a.lastSeen - b.lastSeen))
+      .slice(0, limit);
+  }
+
   function renderStart() {
     const app = document.getElementById('app');
     const settings = state.progress.settings;
@@ -2305,6 +2472,7 @@
     const taBest = state.progress.timeAttackBest || 0;
     const memBest = state.progress.memoryBest[settings.memoryGridSize];
     const noWords = state.pairs.length === 0;
+    const totalAnswered = state.progress.lifetime.totalAnswered + state.progress.conjugateLifetime.totalAnswered;
 
     const tiles = [
       { id: 'quiz', icon: '🔤', name: 'Quiz', meta: 'Type or choose', color: 'rgba(255,107,74,0.18)', locked: false, gate: true },
@@ -2344,6 +2512,14 @@
             <div class="banner-text">
               <div class="banner-name">Achievements</div>
               <div class="banner-meta">${achUnlockedCount}/${achTotalCount} unlocked</div>
+            </div>
+            <div class="banner-arrow">→</div>
+          </button>
+          <button class="game-tile progress-banner" data-tile="myprogress">
+            <div class="tile-icon-wrap" style="background:rgba(201,168,255,0.18);">📊</div>
+            <div class="banner-text">
+              <div class="banner-name">My Progress</div>
+              <div class="banner-meta">${totalAnswered} answers logged</div>
             </div>
             <div class="banner-arrow">→</div>
           </button>
@@ -2414,6 +2590,7 @@
         else if (id === 'timeattack') { state.screen = 'timeattack-setup'; render(); }
         else if (id === 'memory') { state.screen = 'memory-setup'; render(); }
         else if (id === 'achievements') { state.screen = 'achievements'; render(); }
+        else if (id === 'myprogress') { state.screen = 'my-progress'; render(); }
         else if (id === 'categories') { state.screen = 'categories'; render(); }
         else if (id === 'verbs') { goToConjugateSetup(); }
       });
@@ -3263,6 +3440,108 @@
     document.getElementById('back-btn').addEventListener('click', () => { state.screen = 'achievements'; render(); });
   }
 
+  function renderMyProgress() {
+    const app = document.getElementById('app');
+    const p = state.progress;
+
+    const vocabAccuracy = p.lifetime.totalAnswered > 0
+      ? Math.round((p.lifetime.totalCorrect / p.lifetime.totalAnswered) * 100) : 0;
+    const conjAccuracy = p.conjugateLifetime.totalAnswered > 0
+      ? Math.round((p.conjugateLifetime.totalCorrect / p.conjugateLifetime.totalAnswered) * 100) : 0;
+
+    const wordCounts = boxCounts(p.wordStats);
+    const verbCounts = boxCounts(p.verbStats);
+    const wordMax = Math.max(1, ...wordCounts);
+    const verbMax = Math.max(1, ...verbCounts);
+
+    const barsHtml = (counts, max, colorClass) => counts.map((count, i) => {
+      const heightPct = count > 0 ? Math.max((count / max) * 100, 6) : 2;
+      return `
+        <div class="progress-bar-col">
+          <div class="progress-bar-count">${count}</div>
+          <div class="progress-bar ${colorClass}" style="height:${heightPct}%"></div>
+          <div class="progress-bar-label">${i + 1}</div>
+        </div>
+      `;
+    }).join('');
+
+    const reviewWords = lowestBoxWords(5);
+    const reviewWordsHtml = reviewWords.length ? reviewWords.map(ws => `
+      <div class="progress-review-item">
+        <div>
+          <div class="progress-review-word">${esc(ws.es)}</div>
+          <div class="progress-review-en">${esc(ws.en)}</div>
+        </div>
+        <div class="progress-box-tag ${ws.box >= 2 ? 'mid' : ''}">Box ${ws.box + 1}</div>
+      </div>
+    `).join('') : `<div class="progress-empty">Nothing to review yet — play a round first.</div>`;
+
+    const reviewCombos = lowestBoxVerbCombos(5);
+    const reviewCombosHtml = reviewCombos.length ? reviewCombos.map(vs => `
+      <div class="progress-review-item">
+        <div>
+          <div class="progress-review-word">${esc(vs.es)} <span class="progress-review-person">(${esc(PERSON_LABELS[vs.person])})</span></div>
+          <div class="progress-review-en">${esc(vs.en || '')}</div>
+        </div>
+        <div class="progress-box-tag ${vs.box >= 2 ? 'mid' : ''}">Box ${vs.box + 1}</div>
+      </div>
+    `).join('') : `<div class="progress-empty">Nothing to review yet — play a Conjugate round first.</div>`;
+
+    app.innerHTML = `
+      <div class="screen bg-progress">
+        <div class="wrap">
+          <div class="screen-header">
+            <button id="back-btn" class="back-btn">←</button>
+            <div class="screen-title">📊 My Progress</div>
+          </div>
+
+          <div class="progress-summary-row">
+            <div class="card progress-summary-card">
+              <div class="progress-summary-eyebrow">Vocabulary</div>
+              <div class="progress-summary-big">${p.lifetime.totalAnswered}</div>
+              <div class="progress-summary-big-label">words answered</div>
+              <div class="progress-summary-stat"><span>Accuracy</span><span>${vocabAccuracy}%</span></div>
+              <div class="progress-summary-stat"><span>Streak</span><span>${p.streak.current} · best ${p.streak.best}</span></div>
+            </div>
+            <div class="card progress-summary-card conjugate">
+              <div class="progress-summary-eyebrow">Conjugation</div>
+              <div class="progress-summary-big">${p.conjugateLifetime.totalAnswered}</div>
+              <div class="progress-summary-big-label">verb forms answered</div>
+              <div class="progress-summary-stat"><span>Accuracy</span><span>${conjAccuracy}%</span></div>
+              <div class="progress-summary-stat"><span>Streak</span><span>${p.conjugateStreak.current} · best ${p.conjugateStreak.best}</span></div>
+            </div>
+          </div>
+
+          <div class="card" style="margin-top:14px;">
+            <div class="progress-section-title">Box progress — Vocabulary</div>
+            <div class="progress-section-sub">Box 6 words are the ones you've got locked in</div>
+            <div class="progress-bars">${barsHtml(wordCounts, wordMax, '')}</div>
+          </div>
+
+          <div class="card" style="margin-top:14px;">
+            <div class="progress-section-title">Box progress — Conjugation</div>
+            <div class="progress-section-sub">Verb + pronoun combos, same 6-box system</div>
+            <div class="progress-bars">${barsHtml(verbCounts, verbMax, 'conjugate')}</div>
+          </div>
+
+          <div class="card" style="margin-top:14px;">
+            <div class="progress-section-title">Words to review</div>
+            <div class="progress-section-sub">Lowest-box words right now</div>
+            <div class="progress-review-list">${reviewWordsHtml}</div>
+          </div>
+
+          <div class="card" style="margin-top:14px; margin-bottom:14px;">
+            <div class="progress-section-title">Verb combos to review</div>
+            <div class="progress-section-sub">Lowest-box verb + pronoun pairs right now</div>
+            <div class="progress-review-list">${reviewCombosHtml}</div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    document.getElementById('back-btn').addEventListener('click', goHome);
+  }
+
   function renderTimeAttack() {
     const app = document.getElementById('app');
     const current = state.taCurrentQuestion;
@@ -3381,7 +3660,15 @@
     document.getElementById('ta-settings-btn').addEventListener('click', backToTimeAttackSetup);
   }
 
+  // Tracks the previous screen so render() can tell a real navigation
+  // (scroll should jump to top) apart from an in-screen re-render like
+  // checking a quiz answer or toggling the menu (scroll should stay put).
+  let lastScreen = null;
+
   function render() {
+    const isNewScreen = state.screen !== lastScreen;
+    lastScreen = state.screen;
+
     if (state.screen === 'start') renderStart();
     else if (state.screen === 'quiz-setup') renderQuizSetup();
     else if (state.screen === 'categories') renderCategories();
@@ -3401,6 +3688,9 @@
     }
     else if (state.screen === 'achievements') renderAchievements();
     else if (state.screen === 'achievements-detail') renderAchievementGroup();
+    else if (state.screen === 'my-progress') renderMyProgress();
+
+    if (isNewScreen) window.scrollTo(0, 0);
   }
 
   // Single, stable listener for advancing on Enter from the feedback screen.
