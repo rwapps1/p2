@@ -2406,22 +2406,55 @@
 
   // Lowest-box entries first (what you're weakest on right now), then
   // highest wrong-count as a tiebreaker, then least-recently-seen last.
-  // Only includes entries with stored display text - older entries (from
-  // before this field existed) pick it up automatically next time they're
-  // answered, and are simply skipped here until then (they're still fully
-  // counted in boxCounts() above).
+  // Prefers stored display text, but falls back to matching against
+  // whichever word list is currently loaded (state.pairs) for older entries
+  // recorded before that field existed - so they show up immediately
+  // instead of waiting to be answered again. Only entries matching neither
+  // source (rare: a word from a list not currently loaded) are skipped -
+  // they're still fully counted in boxCounts() above regardless.
   function lowestBoxWords(limit) {
-    return Object.values(state.progress.wordStats)
-      .filter(ws => ws.es && ws.en)
-      .sort((a, b) => (a.box - b.box) || (b.wrong - a.wrong) || (a.lastSeen - b.lastSeen))
-      .slice(0, limit);
+    const fallback = {};
+    state.pairs.forEach(pair => { fallback[wordKey(pair)] = pair; });
+
+    const sorted = Object.entries(state.progress.wordStats)
+      .sort((a, b) => (a[1].box - b[1].box) || (b[1].wrong - a[1].wrong) || (a[1].lastSeen - b[1].lastSeen));
+
+    const out = [];
+    for (const [key, ws] of sorted) {
+      const fb = fallback[key];
+      const es = ws.es || (fb && fb.es);
+      const en = ws.en || (fb && fb.en);
+      if (es && en) {
+        out.push({ es, en, box: ws.box, wrong: ws.wrong });
+        if (out.length >= limit) break;
+      }
+    }
+    return out;
   }
 
+  // Same idea for verb combos. The person index can always be recovered
+  // from the stats key itself (normalize(es) + '::' + personIndex), so
+  // only the display text needs the fallback.
   function lowestBoxVerbCombos(limit) {
-    return Object.values(state.progress.verbStats)
-      .filter(vs => vs.es && typeof vs.person === 'number')
-      .sort((a, b) => (a.box - b.box) || (b.wrong - a.wrong) || (a.lastSeen - b.lastSeen))
-      .slice(0, limit);
+    const fallbackByEs = {};
+    state.verbPairs.forEach(pair => { fallbackByEs[normalize(pair.es)] = pair; });
+
+    const sorted = Object.entries(state.progress.verbStats)
+      .sort((a, b) => (a[1].box - b[1].box) || (b[1].wrong - a[1].wrong) || (a[1].lastSeen - b[1].lastSeen));
+
+    const out = [];
+    for (const [key, vs] of sorted) {
+      const parts = key.split('::');
+      const person = typeof vs.person === 'number' ? vs.person : parseInt(parts[1], 10);
+      const fb = fallbackByEs[parts[0]];
+      const es = vs.es || (fb && fb.es);
+      const en = vs.en || (fb && fb.en) || '';
+      if (es && !isNaN(person)) {
+        out.push({ es, en, box: vs.box, wrong: vs.wrong, person });
+        if (out.length >= limit) break;
+      }
+    }
+    return out;
   }
 
   function renderStart() {
@@ -3705,6 +3738,12 @@
   });
 
   loadFromRepo();
+
+  // Also load the verb list at startup, not just when Conjugate is opened.
+  // My Progress's "verb combos to review" fallback lookup needs it in
+  // memory to recover display text for legacy entries - without this it
+  // only works once Conjugate has been opened at least once this session.
+  loadVerbsFile();
 
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
