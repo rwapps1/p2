@@ -1,6 +1,6 @@
 # Palabra — Spanish Vocab Learning App
 
-A single-page Spanish–English vocabulary trainer that runs entirely from GitHub Pages — no backend, no build step, no account. Your word list lives in the repo as Excel files; the app fetches it, quizzes you across several different game modes, and tracks your progress locally in the browser.
+A single-page Spanish–English vocabulary trainer that runs entirely from GitHub Pages — no backend, no build step, no account. Your word lists live in the repo as Excel files; the app fetches them, quizzes you across several different game modes, and tracks your progress locally in the browser.
 
 ## What's here
 
@@ -10,14 +10,15 @@ A single-page Spanish–English vocabulary trainer that runs entirely from GitHu
 - **Time Attack** — 60 seconds, answer as many as you can. Tracks your best score.
 - **Memory Match** — a face-down grid of Spanish/English tiles; find the pairs. 6, 8, or 12 pairs, tracked by fewest moves.
 - **Categories** — 15 themed word lists (see below) played through the same settings as Quiz, minus the 50-word option.
-- **Achievements** — 15 badges spanning streaks, lifetime totals, and mode-specific milestones.
+- **Conjugate** — present-tense verb practice. Shown an infinitive, its English meaning, and a required pronoun (yo/tú/él/nosotros/vosotros/ellos); type or choose the correctly conjugated form. Handles regular verbs, the main stem-change patterns (e→ie, o→ue, e→i, u→ue), reflexive verbs (answers like "me siento"), and a hand-checked table of fully irregular verbs (ser, estar, ir, oír, etc.).
+- **Achievements** — 24 badges across all five games, grouped by which game they belong to. Reached via the banner below the game grid on the hub (deliberately shaped differently from the game tiles, so it doesn't read as "another game").
 
 **Under the hood:**
 
-- **Real spaced repetition** — every word sits in one of six "boxes." Get it right and it won't come up again for a while (1 → 3 → 7 → 16 → 35 days); get it wrong and it's due again immediately. Word selection is weighted toward whatever's actually due.
+- **Real spaced repetition** — every word (and, for Conjugate, every verb+pronoun combination) sits in one of six "boxes." Get it right and it won't come up again for a while (1 → 3 → 7 → 16 → 35 days); get it wrong and it's due again immediately. Selection is weighted toward whatever's actually due.
 - **Typo tolerance** — typed answers allow for small mistakes (a dropped letter, a missing accent) using edit-distance matching, so close-but-not-exact answers still count.
 - **Multiple accepted answers** — a word list cell can contain more than one valid translation, separated by `/` or `,`.
-- **Shared progress** — Quiz, Time Attack, and Categories all read from and write to the same word history and streak. Memory Match still nudges words through the same repetition schedule, but keeps its own separate score (a memory slip isn't the same as not knowing a word).
+- **Shared vs. separate progress** — Quiz, Time Attack, and Categories all read from and write to the same word history and streak. Memory Match and Conjugate each keep their own separate streak/best-score — a memory slip or a wrong verb ending isn't quite the same signal as not knowing a translation — while Memory Match's matches and Conjugate's answers still feed their words through the same spaced-repetition scheduling as everything else.
 
 ## File layout
 
@@ -25,6 +26,7 @@ A single-page Spanish–English vocabulary trainer that runs entirely from GitHu
 your-repo/
 ├── index.html              ← the app itself (rename as you like)
 ├── words.xlsx               ← main word list
+├── verbs.xlsx                ← verb list for Conjugate
 ├── categories-animals.xlsx
 ├── categories-bodyparts.xlsx
 ├── categories-clothing.xlsx
@@ -47,7 +49,7 @@ your-repo/
 └── icon-512-maskable.png
 ```
 
-Everything needs to be **served** (GitHub Pages, or any local server) rather than opened directly as a file — the app fetches `words.xlsx` and the category files over HTTP, which browsers block for local files. If a fetch fails, the main word list falls back to a manual upload button; category files show an inline error on that category's screen instead.
+Everything needs to be **served** (GitHub Pages, or any local server) rather than opened directly as a file — the app fetches these files over HTTP, which browsers block for local files. If `words.xlsx` fails to load, the app falls back to a manual upload button; `verbs.xlsx` and category files show an inline error on their own screen instead.
 
 ## Word list format
 
@@ -57,15 +59,18 @@ Everything needs to be **served** (GitHub Pages, or any local server) rather tha
 | grande | big / large |
 
 - Spanish in column A, English in column B, on the first sheet.
-- A header row is optional — there's a toggle in the "⋯" menu to skip it.
+- A header row is optional — there's a toggle in the "⋯" menu to skip it (applies to `words.xlsx`, category files, and `verbs.xlsx` alike).
 - Multiple valid translations go in one cell, separated by `/`, `,`, or `;`.
-- Category files follow the exact same format, one file per topic.
+- Category files follow the exact same two-column format, one file per topic.
+- `verbs.xlsx` also follows this shape — column A is the **infinitive** (e.g. `hablar`, `sentarse`), column B its English meaning. No conjugated forms go in the sheet; those are generated by rules built into the app itself.
 
-**Renaming files:** if you rename `words.xlsx`, update the `WORDS_FILE` constant near the top of the `<script>` block in the HTML (and the matching line in `service-worker.js`). Category files must be named `categories-{id}.xlsx` where `{id}` is the lowercase, no-spaces version of the name shown on its tile (e.g. `categories-foodanddrink.xlsx` → "Food and Drink"). Adding a 16th category means adding both the spreadsheet and an entry in the `CATEGORIES` list in the script.
+**Renaming files:** if you rename `words.xlsx` or `verbs.xlsx`, update the matching constant (`WORDS_FILE` / `VERBS_FILE`) near the top of the `<script>` block in the HTML (and `WORDS_FILE`'s counterpart in `service-worker.js`). Category files must be named `categories-{id}.xlsx` where `{id}` is the lowercase, no-spaces version of the name shown on its tile (e.g. `categories-foodanddrink.xlsx` → "Food and Drink"). Adding a 16th category means adding both the spreadsheet and an entry in the `CATEGORIES` list in the script.
+
+**Adding a verb the conjugation engine doesn't already know:** most regular verbs need nothing extra — they're conjugated by rule. If a verb is irregular in a way the engine doesn't yet recognize, it'll fall through to being (incorrectly) treated as regular rather than silently guessing something stranger — worth a quick check against a real conjugation table the first time you add a batch of new verbs.
 
 ## Progress & data
 
-Everything — word history, streaks, best scores, achievements, and settings — is stored in the browser's `localStorage`, tied to that browser and device. Nothing is sent anywhere.
+Everything — word and verb history, streaks, best scores, achievements, and settings — is stored in the browser's `localStorage`, tied to that browser and device. Nothing is sent anywhere.
 
 - **Download progress** / **Upload progress** (in the "⋯" menu) export/import that data as a JSON file, so you can move it to another browser or back it up.
 - **Reload word list** re-fetches `words.xlsx` from the repo, for after you've updated it.
@@ -78,4 +83,4 @@ This isn't a native `.apk` — turning it into one (for something like the Play 
 
 ## Design
 
-Visual identity is "Vidrio" — glass panels over an ambient gradient glow, with the glow's color shifting by mode (coral for Quiz, teal for Time Attack, magenta for Memory Match, gold for Achievements) so the color itself signals where you are in the app. One deliberate nod to Spain: a small medallion badge on the home screen, banded red–gold–red.
+Visual identity is "Vidrio" — glass panels over an ambient gradient glow, with the glow's color shifting by mode (coral for Quiz, teal for Time Attack, magenta for Memory Match, green for Conjugate, gold for Achievements) so the color itself signals where you are in the app. One deliberate nod to Spain: a small medallion badge on the home screen, banded red–gold–red.
