@@ -940,9 +940,78 @@
   .toast-icon { font-size: 26px; }
   .toast-title { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--label); }
   .toast-name { font-weight: 700; font-size: 15px; }
+
+  /* --- App loading screen: shown while loadFromRepo() fetches the word list --- */
+  #app-loading {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg);
+    z-index: 9999;
+    transition: opacity 0.4s ease;
+  }
+  #app-loading.fade-out { opacity: 0; pointer-events: none; }
+
+  #app-loading .loader-orb {
+    width: 84px;
+    height: 84px;
+    border-radius: 50%;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 0 28px rgba(255,196,0,0.4), 0 14px 30px -8px rgba(0,0,0,0.6);
+    animation: loader-pulse 1.4s ease-in-out infinite;
+  }
+  #app-loading .loader-orb-inner {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(180deg, #C60B1E 0 25%, #FFC400 25% 75%, #C60B1E 75% 100%);
+    animation: loader-spin 10s linear infinite;
+  }
+  #app-loading .loader-orb::after {
+    content: '';
+    position: absolute; inset: 0;
+    border-radius: 50%;
+    background: radial-gradient(circle at 33% 25%, rgba(255,255,255,0.6), transparent 55%);
+  }
+  #app-loading .loader-sweep {
+    position: absolute;
+    top: -20%;
+    left: -60%;
+    width: 40%;
+    height: 140%;
+    background: linear-gradient(115deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.5) 50%, rgba(255,255,255,0) 100%);
+    transform: rotate(8deg);
+    animation: loader-sweep 2.8s ease-in-out infinite;
+  }
+
+  @keyframes loader-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+  @keyframes loader-pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.06); }
+  }
+  @keyframes loader-sweep {
+    0% { left: -60%; }
+    45%, 100% { left: 140%; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    #app-loading .loader-orb,
+    #app-loading .loader-orb-inner,
+    #app-loading .loader-sweep { animation: none !important; }
+  }
 </style>
 </head>
 <body>
+<div id="app-loading">
+  <div class="loader-orb">
+    <div class="loader-orb-inner"></div>
+    <div class="loader-sweep"></div>
+  </div>
+</div>
 <div id="app"></div>
 
 <script>
@@ -950,6 +1019,12 @@
   const WORDS_FILE = 'words.xlsx';
   const VERBS_FILE = 'verbs.xlsx';
   // ─────────────────────────────────────────────────────────
+
+  // The orb loader can otherwise finish faster than it's visible on a
+  // quick local load — this floor guarantees at least one full
+  // pulse/sweep cycle plays before it's dismissed.
+  const APP_LOADING_MIN_MS = 600;
+  const appLoadingShownAt = Date.now();
 
   const STORAGE_KEY = 'palabraProgress_v1';
 
@@ -1605,13 +1680,30 @@
       state.fileName = WORDS_FILE;
       state.loading = false;
       parseRows(rows, state.hasHeader);
+      hidePalabraLoader();
     } catch (err) {
       state.loading = false;
       state.fetchFailed = true;
       state.showUpload = true;
       state.error = "Couldn't load \"" + WORDS_FILE + "\" automatically. If you're opening this file directly on your computer rather than through GitHub Pages or a local server, browsers block that kind of file access — try uploading it manually below, or view the page via its GitHub Pages URL instead.";
       render();
+      hidePalabraLoader();
     }
+  }
+
+  // Fades out and removes the boot-time orb loader once the app has
+  // reached an interactive state (word list loaded, or fallen back
+  // to the manual-upload screen). Waits out APP_LOADING_MIN_MS first
+  // so a fast load doesn't skip the animation entirely.
+  function hidePalabraLoader() {
+    const elapsed = Date.now() - appLoadingShownAt;
+    const wait = Math.max(0, APP_LOADING_MIN_MS - elapsed);
+    setTimeout(() => {
+      const el = document.getElementById('app-loading');
+      if (!el) return;
+      el.classList.add('fade-out');
+      setTimeout(() => el.remove(), 400);
+    }, wait);
   }
 
   function handleFile(file) {
